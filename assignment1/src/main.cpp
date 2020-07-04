@@ -20,6 +20,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "Shaders/Shader.h"
+#include "Objects/Grid/Grid.hpp"
 #include "stb_image.h"	// For texture mapping (might be useful for the grid?)
 
 #include <GL/glew.h>    
@@ -48,8 +49,8 @@ const unsigned int WINDOW_WIDTH = 1024;
 const unsigned int WINDOW_HEIGHT = 768;
 
 /* Camera Setup */
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.2f, 2.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -2.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -111,74 +112,76 @@ int main(void)
 	/* Build and Compile Shader Program */
 	Shader shaderProgram("comp371/assignment1/src/Shaders/vertex.shader", "comp371/assignment1/src/Shaders/fragment.shader"); 
 
-	// TEMPORARY CODE: Will be removed once Cube class is finalized 
-	float vertices[] = {
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	/* Grid */
+	Grid mainGrid = Grid();
 
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	unsigned int grid_VAOs[2], grid_VBOs[2], grid_EBO;
+	glGenVertexArrays(2, grid_VAOs);
+	glGenBuffers(2, grid_VBOs);
+	glGenBuffers(1, &grid_EBO);
 
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		/* Grid Mesh */
+		glBindVertexArray(grid_VAOs[0]);
+		glBindBuffer(GL_ARRAY_BUFFER, grid_VBOs[0]);
+		glBufferData(GL_ARRAY_BUFFER, mainGrid.meshVertices.size() * sizeof(glm::vec3), &mainGrid.meshVertices.front(), GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
 
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		/* Grid Floor */
+		glBindVertexArray(grid_VAOs[1]);
+		glBindBuffer(GL_ARRAY_BUFFER, grid_VBOs[1]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(mainGrid.floorVertices), mainGrid.floorVertices, GL_STATIC_DRAW);
 
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, grid_EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(mainGrid.floorIndices), mainGrid.floorIndices, GL_STATIC_DRAW);
 
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-	};
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
 
-	// TEMPORARY CODE: Will be removed once Cube class is finalized 
-	glm::vec3 cubePositions[] = {
-		glm::vec3(0.0f,  0.0f,  0.0f),
-	};
+	// Unbinding (safe)
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
-	// TEMPORARY CODE - Will be changed once we use Cube to render all alphanumeric objects
-	unsigned int VBO, VAO;
-	GLCall(glGenVertexArrays(1, &VAO));
-	GLCall(glGenBuffers(1, &VBO));
 
-	GLCall(glBindVertexArray(VAO));
-
-	GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-	GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW));
-
-	// Set Position
-	GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0));
-	GLCall(glEnableVertexAttribArray(0));
-	
-	// Set Textures
-	GLCall(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))));
-	GLCall(glEnableVertexAttribArray(1));
-
+	//-----------------------------------------------
+	//
+	//float vertices[] = {
+	//	// positions          // colors           // texture coords
+	//	 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+	//	 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+	//	-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+	//	-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
+	//};
+	//
+	//unsigned int indices[] = {
+	//0, 1, 3, // first triangle
+	//1, 2, 3  // second triangle
+	//};
+	//
+	//// TEMPORARY CODE - Will be changed once we use Cube to render all alphanumeric objects
+	//unsigned int VBO, VAO, EBO;
+	//glGenVertexArrays(1, &VAO);
+	//glGenBuffers(1, &VBO);
+	//glGenBuffers(1, &EBO);
+	//
+	//glBindVertexArray(VAO);
+	//
+	//glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	//
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	//
+	//// position attribute
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	//glEnableVertexAttribArray(0);
+	//// color attribute
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	//glEnableVertexAttribArray(1);
+	//// texture coord attribute
+	//glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	//glEnableVertexAttribArray(2);
+	//
 	/* Textures */ 
 
 	// TEMPORARY CODE: Either to be removed or moved to grid class (depending on whether we are using textures)
@@ -214,6 +217,12 @@ int main(void)
 	shaderProgram.use();
 	shaderProgram.setInt("texture", 0);
 
+	// Uniform Declarations
+	unsigned int modelLoc = glGetUniformLocation(shaderProgram.ID, "model");
+	unsigned int viewLoc = glGetUniformLocation(shaderProgram.ID, "view");
+	unsigned int projectionLoc = glGetUniformLocation(shaderProgram.ID, "projection");
+	unsigned int fillLoc = glGetUniformLocation(shaderProgram.ID, "fill");
+
 	/* Setup Camera Projection */
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f);
 	shaderProgram.setMat4("projection", projection);
@@ -235,25 +244,45 @@ int main(void)
 
 		// Tectures
 		// TEMPORARY CODE: Either to be removed or moved to grid class (depending on whether we are using textures)
-		GLCall(glActiveTexture(GL_TEXTURE0));
-		GLCall(glBindTexture(GL_TEXTURE_2D, texture));
-
-		// Activate the shader
-		shaderProgram.use();
+		//GLCall(glActiveTexture(GL_TEXTURE0));
+		//GLCall(glBindTexture(GL_TEXTURE_2D, texture));
 
 		// Handles camera views and transformations
 		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		shaderProgram.setMat4("view", view);
 
+		// Draw the Grid Mesh
+		//shaderProgram.setBool("fill", true);
+		glUniform1i(fillLoc, 0);
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(5.0, 5.0, 5.0));
+		glBindVertexArray(grid_VAOs[0]);
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		glDrawArrays(GL_LINES, 0, mainGrid.meshVertices.size());
+		glBindVertexArray(0);
+
+		// Draw the Grid Floor
+		//shaderProgram.setBool("fill", false);
+		model = glm::mat4(1.0f);
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0005f));
+		glBindVertexArray(grid_VAOs[1]);
+		//model = glm::translate(model, glm::vec3(1.0f, 1.0f, 0.0f));
+		glUniform1i(fillLoc, 1);
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 		// TEMPORARY CODE: Will be changed once Cube class is finalized 
-		GLCall(glBindVertexArray(VAO));
-
-			glm::mat4 model = glm::mat4(1.0f); // always start with initialize to identity matrix first
-			model = glm::translate(model, cubePositions[0]);
-			model = glm::rotate(model, glm::radians(0.0f), glm::vec3(1.0f, 0.3f, 0.5f));
-			shaderProgram.setMat4("model", model);
-
-			GLCall(glDrawArrays(GL_TRIANGLES, 0, 36));
+		//GLCall(glBindVertexArray(VAO));
+		//
+		//	glm::mat4 model = glm::mat4(1.0f); // always start with initialize to identity matrix first
+		//	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		//	model = glm::scale(model, glm::vec3(2.0, 2.0, 2.0));
+		//	shaderProgram.setMat4("model", model);
+		//
+		//	GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
 
 		// Swap Buffers and Poll for Events
 		glfwSwapBuffers(window);
@@ -261,8 +290,8 @@ int main(void)
 	}
 
 	/* De-allocate resources */
-	GLCall(glDeleteVertexArrays(1, &VAO));
-	GLCall(glDeleteBuffers(1, &VBO));
+	//GLCall(glDeleteVertexArrays(1, &VAO));
+	//GLCall(glDeleteBuffers(1, &VBO));
 	
 	/* Terminate Program */
 	glfwTerminate();
@@ -279,7 +308,7 @@ void processInput(GLFWwindow *window)
 	}
 
 	// TODO: Change Camera to be dependent on Mouse Movements (as specified in the assignment)
-	float cameraSpeed = 2.5 * deltaTime;
+	float cameraSpeed = 1.0 * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		cameraPos += cameraSpeed * cameraFront;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
