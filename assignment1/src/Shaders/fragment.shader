@@ -1,13 +1,10 @@
 #version 440
 out vec4 FragColor;
 
-in vec2 TexCoord;
+in vec3 vertexDefinedColor;
 
-uniform sampler2D texture1;
 uniform int fill;
 
-// TODO: Remove textures and use colors as specified in A1.
-// It's currently a texture because it's easier to see than a solid color
 void main()
 {
 	// Yellow
@@ -20,14 +17,15 @@ void main()
 	{
 		FragColor = vec4(0.2f, 0.3f, 0.3f, 1.0f);
 	}
+	// Grey
 	else if (fill == 2)
 	{
 		FragColor = vec4(0.75f, 0.75f, 0.75f, 1.0f);
 	}
-	// Textures
+	// Vertex Defined
 	else 
 	{
-		FragColor = texture(texture1, TexCoord);
+		FragColor = vec4(vertexDefinedColor, 1.0f);
 	}
 
 }
