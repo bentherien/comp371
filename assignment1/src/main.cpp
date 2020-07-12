@@ -218,7 +218,7 @@ int main(void)
 	
 	shaderProgram.use();
 
-	// Main Loop 
+	// Main Loop NEW CHANGES!!!
 	while (!glfwWindowShouldClose(window))
 	{
 		// Set frame for Camera (taken from LearnOpenGL)
