@@ -64,7 +64,6 @@ static bool GLLogCall(const char* function, const char* file, int line)
 void processInput(GLFWwindow *window, Model** models);
 void cursorPositionCallback(GLFWwindow * window, double xPos, double yPos);
 void setModelColor(int modelIndex, Shader * modelShader);
-unsigned int loadTexture(const char *path);
 
 /* Global Constants */
 const unsigned int WINDOW_WIDTH = 1024;
@@ -82,10 +81,6 @@ float xOffset = 0.0f;
 float yOffset = 0.0f;
 float rX = 0.0f;
 float rY = 0.0f;
-
-// Lighting Variables
-glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-glm::vec3 bensLightPos(0.0f, 3.0f, 0.0f);
 
 //globals used for selecting render mode and models
 GLenum MODE = GL_TRIANGLES;
@@ -258,7 +253,7 @@ int main(void)
 
 		// Start Using Model Shader
 		modelShader.use();
-		modelShader.setVec3("lightColor", lightColor);
+		modelShader.setVec3("lightColor", glm::vec3(1.0, 1.0, 1.0));	// hard coded to white
 		modelShader.setVec3("viewPos", camera.position);
 		for (int i = 0; i < 5; i++)
 		{
