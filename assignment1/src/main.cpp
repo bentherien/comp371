@@ -22,6 +22,7 @@
 #include "Objects/geometry/Polygon.h"
 #include "Objects/Grid.hpp"
 #include "Objects/Camera.h"
+#include "Objects/Lamp.h"
 #include "OurModels.cpp"
 
 #include <GL/glew.h>    
@@ -63,6 +64,7 @@ static bool GLLogCall(const char* function, const char* file, int line)
 void processInput(GLFWwindow *window, Model** models);
 void cursorPositionCallback(GLFWwindow * window, double xPos, double yPos);
 void setModelColor(int modelIndex, Shader * modelShader);
+unsigned int loadTexture(const char *path);
 
 /* Global Constants */
 const unsigned int WINDOW_WIDTH = 1024;
@@ -81,8 +83,9 @@ float yOffset = 0.0f;
 float rX = 0.0f;
 float rY = 0.0f;
 
-// Lighting Locations
-glm::vec3 bensLightPos(0.0f, 3.0f, 5.0f);
+// Lighting Variables
+glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+glm::vec3 bensLightPos(0.0f, 3.0f, 0.0f);
 
 //globals used for selecting render mode and models
 GLenum MODE = GL_TRIANGLES;
@@ -158,6 +161,14 @@ int main(void)
 	createLightModel(light);
 	light->bindArrayBuffer(true, light);
 
+	// [Lamps]
+
+	Lamp* bensLamp = new Lamp(light, glm::vec3(0.0f, 3.0f, 0.0f));
+	Lamp* seansLamp = new Lamp(light, glm::vec3(3.5f, 3.0f, -4.0f));
+	Lamp* waynesLamp = new Lamp(light, glm::vec3(-4.0f, 3.0f, -4.0f));
+	Lamp* isasLamp = new Lamp(light, glm::vec3(3.5f, 3.0f, 4.0f));
+	Lamp* zimingsLamp = new Lamp(light, glm::vec3(-4.0f, 3.0f, 4.0f));
+
 	// [Grid]
 
 	Grid mainGrid = Grid();
@@ -178,21 +189,28 @@ int main(void)
 	GLCall(glBindVertexArray(grid_VAOs[1]));
 	GLCall(glBindBuffer(GL_ARRAY_BUFFER, grid_VBOs[1]));
 	GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(mainGrid.floorVertices), mainGrid.floorVertices, GL_STATIC_DRAW));
-	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, grid_EBO));
-	GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(mainGrid.floorIndices), mainGrid.floorIndices, GL_STATIC_DRAW));
+	// Position
 	GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0));
 	GLCall(glEnableVertexAttribArray(0));
+	// Normals
 	GLCall(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))));
 	GLCall(glEnableVertexAttribArray(1));
 
 	// [Coordinate Axis]
-	GLCall(glBindVertexArray(grid_VAOs[2]));
-	GLCall(glBindBuffer(GL_ARRAY_BUFFER, grid_VBOs[2]));
-	GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(mainGrid.axisVertices), mainGrid.axisVertices, GL_STATIC_DRAW));
-	GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0));
-	GLCall(glEnableVertexAttribArray(0));
-	GLCall(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))));
-	GLCall(glEnableVertexAttribArray(1));
+	//GLCall(glBindVertexArray(grid_VAOs[2]));
+	//GLCall(glBindBuffer(GL_ARRAY_BUFFER, grid_VBOs[2]));
+	//GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(mainGrid.axisVertices), mainGrid.axisVertices, GL_STATIC_DRAW));
+	//GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0));
+	//GLCall(glEnableVertexAttribArray(0));
+	//GLCall(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))));
+	//GLCall(glEnableVertexAttribArray(1));
+
+	Lamp** lamps = new Lamp*[5];
+	lamps[0] = bensLamp;
+	lamps[1] = seansLamp;
+	lamps[2] = waynesLamp;
+	lamps[3] = isasLamp;
+	lamps[4] = zimingsLamp;
 
 	Model** models = new Model*[5];
 	models[0] = ben;
@@ -209,7 +227,7 @@ int main(void)
 	light->translateToOrigin();
 	
 	ben->addScale(glm::vec3(0.2f, 0.2f, 0.2f));
-	ben->addTranslation(glm::vec3(0.0f, 0.0f, -1.0f));
+	ben->addTranslation(glm::vec3(0.0f, 0.0f, 0.0f));
 	
 	sean->addScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	sean->addTranslation(glm::vec3(3.5f, 0.0f, -4.0f));
@@ -221,10 +239,7 @@ int main(void)
 	isa->addTranslation(glm::vec3(3.5f, 0.0f, 4.0f));
 	
 	ziming->addScale(glm::vec3(0.2f, 0.2f, 0.2f));
-	ziming->addTranslation(glm::vec3(-4.0f, 0.0f, 4.0f));
-
-	light->addScale(glm::vec3(0.1f, 0.1f, 0.1f));
-	light->addTranslation(bensLightPos);
+	ziming->addTranslation(glm::vec3(-4.0f, 0.0f, 4.0f));      
 
 	// Main Loop 
 	while (!glfwWindowShouldClose(window))
@@ -243,9 +258,12 @@ int main(void)
 
 		// Start Using Model Shader
 		modelShader.use();
-		modelShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-		modelShader.setVec3("lightPos", bensLightPos);
+		modelShader.setVec3("lightColor", lightColor);
 		modelShader.setVec3("viewPos", camera.position);
+		for (int i = 0; i < 5; i++)
+		{
+			lamps[i]->setShaderValues(&modelShader, i);
+		}
 
 		// Recompute Camera Pipeline
 		glm::mat4 model;
@@ -310,11 +328,10 @@ int main(void)
 		model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0005f));
 		modelShader.setMat4("model", model);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 		
 		// [Objects Not Affected by Light Source]
 
-		// Start Using Lighting Shader
 		lightShader.use();
 		lightShader.setMat4("projection", projection);
 		lightShader.setMat4("view", view);
@@ -324,17 +341,23 @@ int main(void)
 		GLCall(glBindVertexArray(grid_VAOs[2]));
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, 0.05f, 0.0f));
-		lightShader.setMat4("model", model);
 		lightShader.setInt("fill", 0);
+		lightShader.setMat4("model", model);
 		glDrawArrays(GL_LINES, 0, 6);
 		glLineWidth(1.0f);
 
-		model = glm::mat4(1.0f);
-		light->bind();
-		model = light->getModelMatrix();
-		lightShader.setMat4("model", model);
+		// [Lamps]
 		lightShader.setInt("fill", -1);
-		GLCall(glDrawArrays(GL_TRIANGLES, 0, light->getVAVertexCount()));
+		for (int i = 0; i < 5 ; i++)
+		{
+			lamps[i]->getModel()->bind();
+			model = lamps[i]->getModel()->getModelMatrix();
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, lamps[i]->getPosition());
+			model = glm::scale(model, glm::vec3(0.1f));
+			lightShader.setMat4("model", model);
+			GLCall(glDrawArrays(GL_TRIANGLES, 0, lamps[i]->getModel()->getVAVertexCount()));
+		}
 
 		// Swap Buffers and Poll for Events
 		glfwSwapBuffers(window);
@@ -563,6 +586,3 @@ void cursorPositionCallback(GLFWwindow * window, double xPos, double yPos)
 		camera.zoomCamera(yOffset);
 	}
 }
-
-
-

@@ -96,7 +96,6 @@ void Binder::bindArrayBuffer(bool unbind, Model* model)
 		{
 			GLCall(glVertexAttribPointer(vertexAttribCount, it->getFloatCount(), GL_FLOAT, GL_FALSE, model->getVertexByteSize(), (void*)(vertexByteOffset)));
 			GLCall(glEnableVertexAttribArray(vertexAttribCount));
-			std::cout << vertexByteOffset << std::endl;
 			
 			vertexAttribCount += 1;
 			vertexByteOffset += it->getByteSize();
