@@ -152,11 +152,6 @@ void Model::addScale(glm::vec3 scale)
 		scale_vec.y += scale.y;
 		scale_vec.z += scale.z;
 	}
-	else {
-		scale_vec.x = 0.2f;
-		scale_vec.y = 0.2f;
-		scale_vec.z = 0.2f;
-	}
 
 	// Update AABB (Collision)
 	setAABB();
